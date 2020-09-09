@@ -20,7 +20,7 @@
 
 #include "lwip/err.h"
 #include "lwip/sys.h"
-
+#include "driver/gpio.h"
 /* The examples use WiFi configuration that you can set via project configuration menu
 
    If you'd rather not, just change the below entries to strings with
@@ -38,6 +38,9 @@ static EventGroupHandle_t s_wifi_event_group;
  * - we failed to connect after the maximum amount of retries */
 #define WIFI_CONNECTED_BIT BIT0
 #define WIFI_FAIL_BIT      BIT1
+#define GPIO_OUTPUT_IO_0    4
+#define GPIO_OUTPUT_IO_1    5
+#define GPIO_OUTPUT_PIN_SEL  ((1ULL<<GPIO_OUTPUT_IO_0) | (1ULL<<GPIO_OUTPUT_IO_1))
 
 static const char *TAG = "wifi station";
 
@@ -125,11 +128,30 @@ void wifi_init_sta(void)
     ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler));
     vEventGroupDelete(s_wifi_event_group);
 }
-
 void app_main()
 {
     ESP_ERROR_CHECK(nvs_flash_init());
 
     ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
     wifi_init_sta();
+    gpio_config_t io_conf;
+    //disable interrupt
+    io_conf.intr_type = GPIO_INTR_DISABLE;
+    //set as output mode
+    io_conf.mode = GPIO_MODE_OUTPUT;
+    //bit mask of the pins that you want to set,e.g.GPIO15/16
+    io_conf.pin_bit_mask = GPIO_OUTPUT_PIN_SEL;
+    //disable pull-down mode
+    io_conf.pull_down_en = 0;
+    //disable pull-up mode
+    io_conf.pull_up_en = 0;
+    //configure GPIO with the given settings
+    gpio_config(&io_conf);
+    gpio_set_level(GPIO_OUTPUT_IO_1,false);
+    gpio_set_level(GPIO_OUTPUT_IO_0, true); // set pin4 high
+    vTaskDelay(2000 / portTICK_RATE_MS); //
+    gpio_set_level(GPIO_OUTPUT_IO_0, false);
+    gpio_set_level(GPIO_OUTPUT_IO_1, true);// set pin5 high
+    vTaskDelay(2000 / portTICK_RATE_MS);
+
 }
