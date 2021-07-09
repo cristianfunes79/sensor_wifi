@@ -25,6 +25,10 @@
 #include "lwip/sys.h"
 #include <lwip/netdb.h>
 
+#include "driver/gpio.h"
+#include "ds18b20.h"
+#include "xtensa/hal.h"
+
 /* The examples use WiFi configuration that you can set via project configuration menu
 
    If you'd rather not, just change the below entries to strings with
@@ -45,11 +49,35 @@ static EventGroupHandle_t s_wifi_event_group;
  * - we failed to connect after the maximum amount of retries */
 #define WIFI_CONNECTED_BIT BIT0
 #define WIFI_FAIL_BIT      BIT1
+#define GPIO_OUTPUT_IO_0    4
+#define GPIO_OUTPUT_IO_1    5
+#define GPIO_OUTPUT_PIN_SEL  ((1ULL<<GPIO_OUTPUT_IO_0) | (1ULL<<GPIO_OUTPUT_IO_1))
 
 static const char *TAG = "wifi station";
-static const char *payload = "Message from ESP32 ";
+//static const char *payload = "Message from ESP32 ";
 
 static int s_retry_num = 0;
+static char temp_stream[20];
+
+
+/*------------------------------------------------
+ * Sensor
+ * ----------------------------------------------*/
+static void sensor_task(void *pvParameters)
+{
+	OneWireInit();
+	float temp;
+	
+	while(1)
+	{
+		temp = OneWireTemp();
+        	vTaskDelay(2000 / portTICK_PERIOD_MS);
+		sprintf(temp_stream, ">TEMP: %2.2f", temp);
+        	ESP_LOGE(TAG, ">temp: %f", temp);
+	}
+}
+
+
 /*--------------------------------------------------
  * Socket
  *-----------------------------------------------*/
@@ -86,7 +114,8 @@ static void tcp_client_task(void *pvParameters)
         ESP_LOGI(TAG, "Successfully connected");
 
         while (1) {
-            int err = send(sock, payload, strlen(payload), 0);
+//            int err = send(sock, payload, strlen(payload), 0);
+            int err = send(sock, temp_stream, strlen(temp_stream), 0);
             if (err < 0) {
                 ESP_LOGE(TAG, "Error occured during sending: errno %d", errno);
                 break;
@@ -205,6 +234,8 @@ void wifi_init_sta(void)
     vEventGroupDelete(s_wifi_event_group);
 }
 
+
+
 void app_main()
 {
     ESP_ERROR_CHECK(nvs_flash_init());
@@ -212,5 +243,8 @@ void app_main()
 
     ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
     wifi_init_sta();
-    xTaskCreate(tcp_client_task, "tcp_client", 4096, NULL, 5, NULL);
+
+	xTaskCreate(tcp_client_task, "tcp_client", 4096, NULL, 5, NULL);
+    xTaskCreate(sensor_task, "sensor_task", 4096, NULL, 2, NULL);
+
 }
