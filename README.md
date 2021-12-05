@@ -1,5 +1,11 @@
-# sensor_wifi
-Repo para el firmware del sensor wifi
+# Sensor WiFi
+Repositorio para el firmware del sensor wifi.
+
+# Brief current status
+
+- [x] Conexion a WiFi por SSID y PASS preconfigurados
+- [x] Lectura de sensor de temperatura ds18b20
+- [x] Envio de datos a traves de socket tcp a ip y puerto preconfigurados
 
 # funciones basicas
 1- Conectarse a un SSID y PASS al encender  
