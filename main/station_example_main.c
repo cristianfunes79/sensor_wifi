@@ -38,7 +38,7 @@
 #define EXAMPLE_ESP_WIFI_PASS      CONFIG_ESP_WIFI_PASSWORD
 #define EXAMPLE_ESP_MAXIMUM_RETRY  CONFIG_ESP_MAXIMUM_RETRY
 
-#define HOST_IP_ADDR "44.235.218.151"
+#define HOST_IP_ADDR "192.168.100.10"
 #define PORT 5000
 
 /* FreeRTOS event group to signal when we are connected*/
@@ -67,13 +67,27 @@ static void sensor_task(void *pvParameters)
 {
 	OneWireInit();
 	float temp;
+    static int temp_int, temp_dec;
+    static uint32_t count=0;
+    uint8_t retries = 10;
 	
 	while(1)
 	{
-		temp = OneWireTemp();
-        	vTaskDelay(2000 / portTICK_PERIOD_MS);
-		sprintf(temp_stream, ">TEMP: %2.2f", temp);
-        	ESP_LOGE(TAG, ">temp: %f", temp);
+        for(uint8_t retry=0; retry<retries; retry++)
+        {
+		    if(!OneWireTemp(&temp)) //returns 0 if success
+            {
+                temp_int = (int)temp;
+                temp_dec = (int)((temp - (float)temp_int) * 100.0);
+		        sprintf(temp_stream, ">T:%03i.%02i,%d", temp_int, temp_dec,retry);
+                break;
+            }
+            else
+            {
+		        if(retry == (retries-1)) sprintf(temp_stream, ">ERROR");
+            }
+        }
+        vTaskDelay(2000 / portTICK_PERIOD_MS);
 	}
 }
 

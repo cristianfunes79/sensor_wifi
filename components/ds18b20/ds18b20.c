@@ -41,26 +41,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #define ONEWIRE_GPIO 4
 
-/*
-    gpio_set_level(GPIO_OUTPUT_IO_1,false);
-    gpio_set_level(GPIO_OUTPUT_IO_0, 1); // set pin4 high
-    vTaskDelay(2000 / portTICK_RATE_MS); //
-    gpio_set_level(GPIO_OUTPUT_IO_0, false);
-    gpio_set_level(GPIO_OUTPUT_IO_1, true);// set pin5 high
-    vTaskDelay(2000 / portTICK_RATE_MS);
-*/
-
-// Available Functions:
-float OneWireTemp(void); // Returns the temperature in celsius 
-unsigned int OneWireReset(void); // Sends a reset pulse to the sensor 
-void OneWireWriteBit(unsigned char); // write a single bit to the OneWire
-unsigned char OneWireReadBit(void); // reads a single bit 
-void OneWireWriteByte(unsigned char); // writes a byte 
-unsigned char OneWireReadByte(void); // reads a byte 
-unsigned char OneWireRead(void); // reads the current status of the bus
-void OneWireHigh(void); // sets the bus high
-void OneWireRelease(void); // releases the bus 
-
 void __delay_us( unsigned int delay_ )
 {
 	unsigned int count_start, count_end;
@@ -74,8 +54,26 @@ void __delay_us( unsigned int delay_ )
 	}
 }
 
+static uint8_t dsCRC8(const uint8_t *addr, uint8_t len)//begins from LS-bit of LS-byte (OneWire.h)
+{
+    uint8_t crc = 0;
+    while (len--)
+    {
+        uint8_t inbyte = *addr++;
+        for (uint8_t i = 8; i; i--)
+        {
+            uint8_t mix = (crc ^ inbyte) & 0x01;
+            crc >>= 1;
+            if (mix) crc ^= 0x8C;
+            inbyte >>= 1;
+        }
+    }
+    return crc;
+}
 
-float OneWireTemp(){
+uint8_t OneWireTemp(float * readout){
+
+    unsigned char scratchpad_mem[9];
     
     OneWireReset(); // Reset Pulse 
     OneWireWriteByte(0xCC); // Issue skip ROM command (CCh)
@@ -84,47 +82,31 @@ float OneWireTemp(){
     OneWireReset(); // Start new command sequence 
     OneWireWriteByte(0xCC); // Issue skip ROM command 
     OneWireWriteByte(0xBE); // Read Scratchpad (BEh) - 15 bits
-    unsigned char LSB = OneWireReadByte();
-    unsigned char MSB = OneWireReadByte();
+    for(unsigned int i=0; i<9; i++)
+    {
+        scratchpad_mem[i] = OneWireReadByte();
+    }
+    unsigned char LSB = scratchpad_mem[0];
+    unsigned char MSB = scratchpad_mem[1];
     OneWireReset(); // Stop Reading 
     unsigned int data = MSB;
     float temperature = (data << 8) | LSB;
-    return (temperature/16); 
-   
+
+    if (dsCRC8(scratchpad_mem, 8) == scratchpad_mem[8]) 
+    {
+        *readout = temperature/16;
+        return 0;
+    }
+    return 1; 
 }
 
 void OneWireHigh(){
-    gpio_config_t io_conf;
-    //disable interrupt
-    io_conf.intr_type = GPIO_INTR_DISABLE;
-    //set as output mode
-    io_conf.mode = GPIO_MODE_INPUT;
-    //bit mask of the pins that you want to set,e.g.GPIO15/16
-    io_conf.pin_bit_mask = 0x10;
-    //disable pull-down mode
-    io_conf.pull_down_en = 0;
-    //disable pull-up mode
-    io_conf.pull_up_en = 0;
-    //configure GPIO with the given settings
-    gpio_config(&io_conf);
-//    gpio_set_level(ONEWIRE_GPIO, 1);
+    gpio_set_direction(ONEWIRE_GPIO, GPIO_MODE_INPUT);
 }
 
 
 void OneWireRelease(){
-    gpio_config_t io_conf;
-    //disable interrupt
-    io_conf.intr_type = GPIO_INTR_DISABLE;
-    //set as output mode
-    io_conf.mode = GPIO_MODE_OUTPUT;
-    //bit mask of the pins that you want to set,e.g.GPIO15/16
-    io_conf.pin_bit_mask = 0x10;
-    //disable pull-down mode
-    io_conf.pull_down_en = 0;
-    //disable pull-up mode
-    io_conf.pull_up_en = 0;
-    //configure GPIO with the given settings
-    gpio_config(&io_conf);
+    gpio_set_direction(ONEWIRE_GPIO, GPIO_MODE_OUTPUT);
     gpio_set_level(ONEWIRE_GPIO, 0);
 }
 
