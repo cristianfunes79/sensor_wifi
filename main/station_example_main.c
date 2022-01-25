@@ -123,12 +123,12 @@ static void tcp_client_task(void *pvParameters)
         if (err != 0) {
             ESP_LOGE(TAG, "Socket unable to connect: errno %d", errno);
             close(sock);
+            vTaskDelay(1000 / portTICK_PERIOD_MS);
             continue;
         }
         ESP_LOGI(TAG, "Successfully connected");
 
         while (1) {
-//            int err = send(sock, payload, strlen(payload), 0);
             int err = send(sock, temp_stream, strlen(temp_stream), 0);
             if (err < 0) {
                 ESP_LOGE(TAG, "Error occured during sending: errno %d", errno);
