@@ -7,7 +7,7 @@ Repositorio para el firmware del sensor wifi.
 - [x] Lectura de sensor de temperatura ds18b20
 - [x] Envio de datos a traves de socket tcp a ip y puerto preconfigurados
 
-# funciones basicas
+# Funciones basicas
 1- Conectarse a un SSID y PASS al encender  
     - checkear conectividad cada cierto tiempo  
 2- Usar blink de un led para indicar status  
@@ -18,7 +18,7 @@ Repositorio para el firmware del sensor wifi.
 7- Armar un paquete ( determinar formato, por ej /temp:<temp>/bat:<bat>/!, /temp:23.32/bat:3.8/! ) y enviar por tcp ( o udp, ver que conviene )  
 8- Implementar base de datos para almacenar historicos  
 
-# funciones mas completas
+# Funciones mas completas
 1- Cuando se enciende puede arrancar un web server para que el usuario se conecte y le configure el ssid y password.  
   - Tambien se puede hacer un menu de configuracion mas completo para configurar cada sensor con una app  
 2- Agregar un display oled para poder ver mas informacion comodamente, como la temperatura actual, ip, bateria.  
@@ -32,6 +32,6 @@ Repositorio para el firmware del sensor wifi.
 7- Implementar algun protocolo como ping para ver que el sensor este "vivo"  
 
 
-# funciones muy avanzadas    
+# Funciones muy avanzadas    
 1- Upgrade de fw por wifi  
 
