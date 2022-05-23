@@ -1,0 +1,6 @@
+El hardware basicamente consiste en:
+
+1- Esp8266, el mas basico.
+2- Cargador de bateria + bateria lipo (las de drones veo que tienen buena capacidad 3V7 - 600mAh o 1000mAh).
+3- Sensor de temperatura, el mas conocido. Funciona con 3V~5V asi que con la bateria de lipo esta bien.
+4- Opcional, agregar display oled chico para ver temperatura y ver info de WiFi (RSSI, estado de conexion, tension de la bateria, ip, temperatura, ID del nodo).
